@@ -1,4 +1,5 @@
 #include "kalman_filter.h"
+#include <math.h>
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -39,7 +40,8 @@ void KalmanFilter::Update(const VectorXd &z)
 
   //Set the new state
   x_ = x_ + (K * y);
-  P_ = F_ * P_ * F_.transpose() + Q_;
+  MatrixXd I = MatrixXd::Identity(x_.size(),x_.size());
+  P_ = (I - K * H_) * P_;
 }
 
 void KalmanFilter::UpdateEKF(const VectorXd &z) 
@@ -49,6 +51,9 @@ void KalmanFilter::UpdateEKF(const VectorXd &z)
    */
    
   // Find our Z predicition
+  // First, pull out the variables we need from the x_ Vector
+  // Note that px and py are position in the x and y respectively
+  // This change is noted here since x and y in this function are vectors as well
   float px = x_(0);
   float py = x_(1);
   float vx = x_(2);
@@ -59,13 +64,23 @@ void KalmanFilter::UpdateEKF(const VectorXd &z)
   float rho_dot = ((px * vx + py * vy)/rho);
 
   VectorXd z_prediction = VectorXd(3);
-  z_prediction << rho, theta,rho_dot;
+  z_prediction << rho, theta, rho_dot;
   
   VectorXd y = z - z_prediction;
+  // limit y to -pi to pi
+  while (y(1) > M_PI)
+  {
+    y(1) = y(1) - M_PI;
+  }
+  while(y(1) < -M_PI)
+  {
+    y(1) = y(1) + M_PI;
+  }
   MatrixXd S = H_ * P_ * H_.transpose() + R_;
   MatrixXd K = P_ * H_.transpose() * S.inverse();
 
   //Set the new state
   x_ = x_ + (K * y);
-  P_ = F_ * P_ * F_.transpose() + Q_;
+  MatrixXd I = MatrixXd::Identity(x_.size(),x_.size());
+  P_ = (I - K * H_) * P_;
 }

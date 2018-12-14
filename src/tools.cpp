@@ -43,7 +43,12 @@ VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
   // calculate the squared root
   rmse = rmse.array().sqrt();
 
-  // return the result
+  //if RMSE exceeds the thresholds for the project rubric, print it out
+  if (rmse(0) > .11 || rmse(1) > .11 || rmse(2) > .52 || rmse(3) > .52)
+  {
+    std::cout << "#####RMSE FAILED TO COMPLY WITH RUBRIC#####" << std::endl;
+    std::cout << rmse << std::endl;
+  }
   return rmse;
 }
 

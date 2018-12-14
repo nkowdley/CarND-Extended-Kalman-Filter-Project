@@ -40,7 +40,19 @@ FusionEKF::FusionEKF() {
   H_laser_ << 1, 0, 0, 0,
               0, 1, 0, 0;
   ekf_.F_ = MatrixXd(4, 4);
+  //initialize F
+  // Note that dt here is 0, since we are at the beginning
+  // thus dt = 0 and this gets initialized to a 1 diagonal Matrix
+  ekf_.F_ << 1, 0, 0, 0,
+             0, 1, 0, 0,
+             0, 0, 1, 0,
+             0, 0, 0, 1;
   ekf_.P_ = MatrixXd(4, 4);
+  // initialize P_
+  ekf_.P_ << 1, 0, 0, 0,
+             0, 1, 0, 0,
+             0, 0, 1000, 0,
+             0, 0, 0, 1000;
   // The Udacity Quiz Provides Noise_ax and Noise_ay as 9
   // This value is usually provided by the sensor manufacturer
   // So this is not something we would normally calculate
@@ -77,9 +89,11 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
       // and convert them to cartesian using trig
       float rho = measurement_pack.raw_measurements_[0];
       float theta = measurement_pack.raw_measurements_[1];
+      float rho_dot = measurement_pack.raw_measurements_[2];
       ekf_.x_(0) = rho * cos(theta);
       ekf_.x_(1) = rho * sin(theta);
-
+      ekf_.x_(2) = rho_dot * cos(theta);
+      ekf_.x_(3) = rho_dot * sin(theta);
     }
     else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) 
     {
@@ -89,14 +103,9 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
       float y = measurement_pack.raw_measurements_[1];
       ekf_.x_(0) = x;
       ekf_.x_(1) = y;
+      ekf_.x_(2) = 0;
+      ekf_.x_(3) = 0;
     }
-  //initialize F
-  // Note that dt here is 0, since we are at the beginning
-  // thus dt = 0 and this gets initialized to a 1 diagonal Matrix
-  ekf_.F_ << 1, 0, 0, 0,
-             0, 1, 0, 0,
-             0, 0, 1, 0,
-             0, 0, 0, 1;
   // set up the new previous_timestamp
   previous_timestamp_ = measurement_pack.timestamp_;
   // done initializing, no need to predict or update
@@ -116,7 +125,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
    */
 
   // First, get the time and convert it to seconds
-  float dt = measurement_pack.timestamp_ - previous_timestamp_ / 1000000.0;
+  float dt = (measurement_pack.timestamp_ - previous_timestamp_) / 1000000.0;
   previous_timestamp_ = measurement_pack.timestamp_;
   //put the time into the F matrix
   ekf_.F_ << 1, 0, dt, 0,

@@ -46,11 +46,11 @@ class FusionEKF {
   Eigen::MatrixXd Hj_;
 
   // Noise Variables
-  int noise_ax_;
-  int noise_ay_;
+  float noise_ax_;
+  float noise_ay_;
   // Acceleration Noise is a parameter provided to us by the udacity quiz as 3
   // For this, we square it.
-  const int acceleration_noise = 9;
+  const float acceleration_noise = 9.0;
 };
 
 #endif // FusionEKF_H_
